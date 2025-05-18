@@ -1,0 +1,13 @@
+[gwrite.qtdraw]
+unit = "mm"
+document_start = "G21\n"
+layer_start = "(Start Layer)\n"
+line_start = "(Start Block)\n"
+segment_first = """G00 Z5
+G00 X{x:.4f} Y{y:.4f}
+G01 Z0 F1000
+"""
+segment = """G01 X{x:.4f} Y{y:.4f} Z0\n"""
+line_end = """G00 Z5\n"""
+document_end = """G00 X0.0000 Y0.0000"""
+invert_y = true
