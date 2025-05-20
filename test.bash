@@ -1,12 +1,19 @@
 #!/bin/bash
 
+dim=16cm
+
 echo line plotting
 vpype read civicsi.svg \
-    scaleto 200px 200px \
+    scaleto $dim $dim \
     splitall \
     linemerge --tolerance 0.1mm \
     linesort \
     reloop \
     linesimplify \
     filter --min-length 0.5mm \
-    write --center --page-size 220x240 civicsi.out.svg
+    write --center --page-size ${dim}x${dim} civicsi.out.svg
+
+echo gcode rendering
+vpype --config qtdraw.toml \
+    read civicsi.out.svg \
+    gwrite -p qtdraw civicsi.gcode
