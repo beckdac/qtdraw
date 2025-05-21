@@ -54,38 +54,30 @@ axes:
       feed_scaler: 1.100
 
     motor0:
-      #hard_limits: true
+      hard_limits: true
       limit_all_pin: gpio.35:high
-      #pulloff_mm: 5
+      pulloff_mm: 5
       stepstick:
         step_pin: I2SO.5
         direction_pin: I2SO.6:low
  
-    motor1:
-      #hard_limits: true
-      #limit_all_pin: gpio.35
-      stepstick:
-        step_pin: I2SO.3
-        direction_pin: I2SO.4:low
- 
   z:
-    steps_per_mm: 1
+    steps_per_mm: 1600
     max_rate_mm_per_min: 1000
-    acceleration_mm_per_sec2: 100
-    max_travel_mm: 8
+    acceleration_mm_per_sec2: 120
+    max_travel_mm: 20
+    #soft_limits: true
     homing:
       cycle: -1
       positive_direction: true
 
     motor0:
-      limit_all_pin: gpio.34:high
       #hard_limits: true
-      rc_servo:
-        pwm_hz: 50
-        output_pin: gpio.33
-        min_pulse_us: 1800
-        max_pulse_us: 1400
-
+      limit_all_pin: gpio.34
+      stepstick:
+        step_pin: I2SO.3
+        direction_pin: I2SO.4:low
+ 
 i2so:
   bck_pin: gpio.16
   data_pin: gpio.21
