@@ -1,5 +1,5 @@
 board: MKS-DLC32 V2.1
-name: qtdraw 3
+name: qtdraw 5
 meta: villamany 30/Jan/2023
 
 kinematics:
@@ -21,13 +21,14 @@ axes:
     max_travel_mm: 220
     soft_limits: true
     homing:
-      cycle: 0
+      cycle: 2
+      #allow_single_axis: false
       positive_direction: false
       feed_mm_per_min: 500.000
       seek_mm_per_min: 1000.000
       settle_ms: 500
-      seek_scaler: 1.100
-      feed_scaler: 1.100
+      seek_scaler: 1.000
+      feed_scaler: 1.000
 
     motor0:
       hard_limits: true
@@ -45,13 +46,14 @@ axes:
     soft_limits: true
     #pulloff_mm: 2.000
     homing:
-      cycle: 1
+      cycle: 3
+      #allow_single_axis: false
       positive_direction: false
       feed_mm_per_min: 500.000
       seek_mm_per_min: 1000.000
       settle_ms: 500
-      seek_scaler: 1.100
-      feed_scaler: 1.100
+      seek_scaler: 1.000
+      feed_scaler: 1.000
 
     motor0:
       hard_limits: true
@@ -65,15 +67,22 @@ axes:
     steps_per_mm: 1600
     max_rate_mm_per_min: 1000
     acceleration_mm_per_sec2: 120
-    max_travel_mm: 20
-    #soft_limits: true
+    max_travel_mm: 35
+    soft_limits: true
     homing:
-      cycle: -1
+      cycle: 1
+      #allow_single_axis: true
       positive_direction: true
+      feed_mm_per_min: 250.000
+      seek_mm_per_min: 500.000
+      settle_ms: 500
+      seek_scaler: 1.000
+      feed_scaler: 1.000
 
     motor0:
-      #hard_limits: true
-      limit_all_pin: gpio.34
+      hard_limits: true
+      limit_pos_pin: gpio.34
+      pulloff_mm: 5
       stepstick:
         step_pin: I2SO.3
         direction_pin: I2SO.4:low
