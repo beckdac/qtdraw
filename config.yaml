@@ -130,5 +130,9 @@ user_outputs:
   digital2_pin: NO_PIN
   digital3_pin: NO_PIN
 
+probe:
+  pin: gpio.22:low
+  check_mode_start: true
+
 start:
   must_home: false
