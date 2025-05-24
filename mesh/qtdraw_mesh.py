@@ -54,7 +54,7 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
             break
         #print(f"unexpected response to {send} : {resp}")
         data.put(resp)
-        log.write(resp)
+        log.write(resp + '\n')
         log.flush() # force write for logging purposes
     return resp
 
@@ -77,8 +77,8 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
         help='Output websocket to use for gcode input and output')
 @click.option('--output_filename', type=str, default='qtdraw_mesh.tsv')
 @click.option('--log_filename', type=str, default='qtdraw_mesh.log')
-@click.option('--probe_x_offset', type=int, default=8)
-@click.option('--probe_y_offset', type=int, default=1)
+@click.option('--probe_x_offset', type=int, default=26)
+@click.option('--probe_y_offset', type=int, default=26)
 def qt_mesh(lim, div, \
         feed, seek, probe_depth, travel_height, safe_height, \
         output_filename, log_filename, uri, \
@@ -150,10 +150,11 @@ def qt_mesh(lim, div, \
         #print(f"x = {xyz[0]}, y = {xyz[1]}, z = {xyz[2]}")
         mesh_data.append(xyz)
 
-    df = pd.DataFrame(mesh_data, columns=("x", "y", "z"))
-    print(f"writing mesh x,y,z data to '{output_filename}")
+    df = pd.DataFrame(mesh_data, columns=("x", "y", "z"), dtype=float)
+    print(f"writing mesh x,y,z data to '{output_filename} after correcting for probe offset ({probe_x_offset}, {probe_y_offset})")
+    df["x"] = df["x"] + probe_x_offset
+    df["y"] = df["y"] + probe_y_offset
     df.to_csv(output_filename, sep='\t', header=True, index=False)
-    print("you haven't implemented adjusting by x and y probe offsets")
 
     # do this absolutely last because the qdone put won't trigger a
     # the receiver thread to leave until it gets a ping message so
