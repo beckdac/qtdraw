@@ -3,6 +3,7 @@
 import sys
 import queue
 import threading
+import typing
 
 from alive_progress import alive_bar
 import click
@@ -34,7 +35,17 @@ def receiver(ws: websocket.WebSocket, q: queue.Queue, qdone: queue.Queue):
             if not qdone.empty():
                 return
 
-def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, data: queue.Queue, expect: str="ok") -> str:
+def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
+        data: queue.Queue, log: typing.TextIO, \
+        expect: str="ok") -> str:
+    """This is the main send and get result function that compares against
+    an expected 'ok' style result. Any lines not matching the expected 
+    result are assumed to be current or previous (pending in queue) probe
+    responses from fluidnc.  They are added to a queue to be dequeued when
+    probing is complete for later parsing. To make it easier to track
+    what is happening, the unexpected responses are also written to a log
+    file passed in.
+    """
     ws.send(send);
     while True:
         resp = q.get()
@@ -43,6 +54,8 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, data: qu
             break
         #print(f"unexpected response to {send} : {resp}")
         data.put(resp)
+        log.write(resp)
+        log.flush() # force write for logging purposes
     return resp
 
 @click.command()
@@ -62,12 +75,14 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, data: qu
         help='Safe height after meshing')
 @click.option('--uri', type=str, default='ws://qtdraw.local:81', \
         help='Output websocket to use for gcode input and output')
-@click.option('--output_filename', type=str, default='qt_mesh.tsv')
+@click.option('--output_filename', type=str, default='qtdraw_mesh.tsv')
+@click.option('--log_filename', type=str, default='qtdraw_mesh.log')
 @click.option('--probe_x_offset', type=int, default=8)
 @click.option('--probe_y_offset', type=int, default=1)
 def qt_mesh(lim, div, \
         feed, seek, probe_depth, travel_height, safe_height, \
-        output_filename, uri, probe_x_offset, probe_y_offset):
+        output_filename, log_filename, uri, \
+        probe_x_offset, probe_y_offset):
     """Generate G-code for fluidnc and parse the output to build
     a height map of the bed by communicating over a websocket and
     parsing the responses for probe messages."""
@@ -85,18 +100,19 @@ def qt_mesh(lim, div, \
 
     print(f"generating {div[0] * div[1]} points on a grid from ({xv[0]},{yv[0]}) to ({xv[-1]},{yv[-1]})")
 
-    with alive_bar(len(xv) * len(yv)) as bar:
+    with alive_bar(len(xv) * len(yv)) as bar, \
+            open(log_filename, 'w') as log:
         # preamble
-        ws_send_and_get(ws, q, f"G90 G21 G17\n", data)
+        ws_send_and_get(ws, q, f"G90 G21 G17\n", data, log)
         fine_seek = seek / 2
         # travel to safe height
-        ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data)
+        ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data, log)
 
 
         def ws_send_xy(x, y):
-            ws_send_and_get(ws, q, f"G1 X{x} Y{y} F{feed}\n", data)
-            ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{fine_seek}\n", data)
-            ws_send_and_get(ws, q, f"G0 Z2 F{seek}\n", data)
+            ws_send_and_get(ws, q, f"G1 X{x} Y{y} F{feed}\n", data, log)
+            ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{fine_seek}\n", data, log)
+            ws_send_and_get(ws, q, f"G0 Z2 F{seek}\n", data, log)
             bar()
 
         # traverse the matrix but zig zag
@@ -108,18 +124,40 @@ def qt_mesh(lim, div, \
                 for y in reversed(yv):
                     ws_send_xy(x, y)
 
-        ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data)
+        ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data, log)
         
 
     # signal to the thread to quit, it will see this at the 
     # next ping from fluidnc
     qdone.put(True);
 
-    print("you haven't implemented adjusting by x and y probe offsets")
+    print(f"parsing mesh data")
+    mesh_data = []
     while not data.empty():
         line = data.get()
-        print(line)
+        line = line.strip()
+        #print(line)
+        if not line.startswith("[PRB:"):
+            raise ValueError(f"unable to find probe prefix '[PRB:' at start of data: {line}")
+        colon_fields = line.split(":")
+        if len(colon_fields) != 3:
+            raise ValueError(f"expected 3 fields in probe data after split on ':', found {len(colon_fields)}, in data: {line}")
+        xyz = colon_fields[1].split(",")
+        if len(xyz) != 3:
+            raise ValueError(f"expected 3 fields (x, y, z) in second : split field when splitting on ',', found {len(xyz)} in data: {line}")
+        if colon_fields[2] != "1]":
+            raise ValueError(f"expected to find true (1) value at probe success field in data, found: {colon_fields[2]} in data: {line}")
+        #print(f"x = {xyz[0]}, y = {xyz[1]}, z = {xyz[2]}")
+        mesh_data.append(xyz)
 
+    df = pd.DataFrame(mesh_data, columns=("x", "y", "z"))
+    print(f"writing mesh x,y,z data to '{output_filename}")
+    df.to_csv(output_filename, sep='\t', header=True, index=False)
+    print("you haven't implemented adjusting by x and y probe offsets")
+
+    # do this absolutely last because the qdone put won't trigger a
+    # the receiver thread to leave until it gets a ping message so
+    # this waits as long as possible from the put
     t.join()
 
 if __name__ == '__main__':
