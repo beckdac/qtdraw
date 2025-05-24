@@ -19,7 +19,7 @@ def mesh_read(input_filename: str) -> pd.DataFrame:
 @click.option('--output_filename', type=str, default='qtdraw_mesh.diff.png')
 @click.option('--input_a_filename', type=str, default='qtdraw_mesh.tsv')
 @click.option('--input_b_filename', type=str, default='qtdraw_mesh.previous.tsv')
-def qtdraw_mesh_plot(output_filename: str, input_a_filename: str, input_b_filename: str):
+def qtdraw_mesh_diff(output_filename: str, input_a_filename: str, input_b_filename: str):
     """Read two mesh files and output a new mesh file with the difference of A - B."""
     mesh_A = mesh_read(input_a_filename)
     mesh_A = mesh_A.sort_values(by=['y', 'x'])
@@ -70,4 +70,4 @@ def qtdraw_mesh_plot(output_filename: str, input_a_filename: str, input_b_filena
     plt.show()
 
 if __name__ == '__main__':
-    qtdraw_mesh_plot()
+    qtdraw_mesh_diff()
