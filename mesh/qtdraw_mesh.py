@@ -114,7 +114,7 @@ def qt_mesh(lim, div, \
 
 
         def ws_send_xy(x, y):
-            ws_send_and_get(ws, q, f"G1 X{x} Y{y} F{feed}\n", data, log, gcode)
+            ws_send_and_get(ws, q, f"G1 X{x:0.4f} Y{y:0.4f} F{feed}\n", data, log, gcode)
             ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{fine_seek}\n", data, log, gcode)
             ws_send_and_get(ws, q, f"G0 Z2 F{seek}\n", data, log, gcode)
             bar()
