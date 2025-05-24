@@ -63,9 +63,9 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
 @click.command()
 @click.option('--lim', nargs=2, type=int, default=(200, 240), \
         help='Size limit of the work area in mm')
-@click.option('--div', nargs=2, type=int, default=(6, 6), \
+@click.option('--div', nargs=2, type=int, default=(10, 10), \
         help='Samples per axis')
-@click.option('--feed', type=int, default=500, \
+@click.option('--feed', type=int, default=1000, \
         help='Feed rate in x and y')
 @click.option('--seek', type=int, default=100, \
         help='Seek rate in z')
