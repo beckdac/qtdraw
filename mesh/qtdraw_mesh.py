@@ -4,6 +4,7 @@ import sys
 import queue
 import threading
 
+from alive_progress import alive_bar
 import click
 import numpy as np
 import pandas as pd
@@ -17,10 +18,13 @@ def receiver(ws: websocket.WebSocket, q: queue.Queue, qdone: queue.Queue):
         for line in ws.recv().splitlines():
             if not isinstance(line, str):
                 line = str(line, 'utf-8')
+            if line.startswith("<Alarm"):
+                raise Exception("Alarm! received from host.")
             if line.startswith("PING:") or \
                   line.startswith("CURRENT_ID:") or \
                   line.startswith("ACTIVE_ID:") or \
-                  line.startswith("<Run|Mpos"):
+                  line.startswith("<Run|MPos") or \
+                  line.startswith("<Idle|MPos"):
                 continue
             else:
                 #print(line)
@@ -35,7 +39,7 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, data: qu
         if resp.startswith(expect):
             #print(f"expected response to {send} : {resp}")
             break
-        print(f"unexpected response to {send} : {resp}")
+        #print(f"unexpected response to {send} : {resp}")
         data.put(resp)
     return resp
 
@@ -57,9 +61,11 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, data: qu
 @click.option('--uri', type=str, default='ws://qtdraw.local:81', \
         help='Output websocket to use for gcode input and output')
 @click.option('--output_filename', type=str, default='qt_mesh.tsv')
+@click.option('--probe_x_offset', type=int, default=8)
+@click.option('--probe_y_offset', type=int, default=1)
 def qt_mesh(lim, div, \
         feed, seek, probe_depth, travel_height, safe_height, \
-        output_filename, uri):
+        output_filename, uri, probe_x_offset, probe_y_offset):
     """Generate G-code for fluidnc and parse the output to build
     a height map of the bed by communicating over a websocket and
     parsing the responses for probe messages."""
@@ -77,44 +83,42 @@ def qt_mesh(lim, div, \
 
     print(f"generating {div[0] * div[1]} points on a grid from ({xv[0]},{yv[0]}) to ({xv[-1]},{yv[-1]})")
 
-    if True:
+    with alive_bar(len(xv) * len(yv)) as bar:
         # preamble
         ws_send_and_get(ws, q, f"G90 G21 G17\n", data)
         fine_seek = seek / 2
-        # fine touch off routine
         # travel to safe height
-        ws_send_and_get(ws, q, f"G0 Z{safe_height}\n", data)
-        # go to the middle to use as a reference
-        ws_send_and_get(ws, q, f"G1 X{lim[0]/2} Y{lim[1]/2} F{feed}\n", data)
-        # go to search start
-        ws_send_and_get(ws, q, f"G0 Z{travel_height} F{seek}\n", data)
-        # probe
-        ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{seek}\n", data)
-        # set the work 0
-        ws_send_and_get(ws, q, f"G92 Z0\n", data)
-        # go to travel_height
-        ws_send_and_get(ws, q, f"G0 Z{travel_height} F{seek}\n", data)
-        # probe at a slower speed
-        ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{fine_seek}\n", data)
-        ws_send_and_get(ws, q, f"G92 Z0\n", data)
-        ws_send_and_get(ws, q, f"G0 Z{travel_height} F{seek}\n", data)
-    
-        for x in xv:
-            for y in yv:
-                ws_send_and_get(ws, q, f"G1 X{x} Y{y} F{feed}\n", data)
-                ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{seek}\n", data)
-                ws_send_and_get(ws, q, f"G0 Z2 F{seek}\n", data)
-
         ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data)
 
-        # signal to the thread to quit, it will see this at the 
-        # next ping from fluidnc
-        qdone.put(True);
-        t.join()
 
-        while not data.empty:
-            line = data.get()
-            print(line)
+        def ws_send_xy(x, y):
+            ws_send_and_get(ws, q, f"G1 X{x} Y{y} F{feed}\n", data)
+            ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{fine_seek}\n", data)
+            ws_send_and_get(ws, q, f"G0 Z2 F{seek}\n", data)
+            bar()
+
+        # traverse the matrix but zig zag
+        for i, x in enumerate(xv):
+            if i % 2 == 0:
+                for y in yv:
+                    ws_send_xy(x, y)
+            else:
+                for y in reversed(yv):
+                    ws_send_xy(x, y)
+
+        ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data)
+        
+
+    # signal to the thread to quit, it will see this at the 
+    # next ping from fluidnc
+    qdone.put(True);
+
+    print("you haven't implemented adjusting by x and y probe offsets")
+    while not data.empty():
+        line = data.get()
+        print(line)
+
+    t.join()
 
 if __name__ == '__main__':
     qt_mesh()
