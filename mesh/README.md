@@ -8,8 +8,8 @@ pip install -e "git+https://github.com/AndyEveritt/GcodeParser.git@master#egg=gc
 ```
 
 Example output:
-![Example bed mesh measurement png output](https://github.com/beckdac/qtdraw/blob/main/main/qtdraw_mesh.png?raw=true)
-![Example bed mesh measurement repeatability png output](https://github.com/beckdac/qtdraw/blob/main/main/qtdraw_mesh_diff.png?raw=true)
+![Example bed mesh measurement png output](https://github.com/beckdac/qtdraw/blob/main/main/mesh/qtdraw_mesh.png?raw=true)
+![Example bed mesh measurement repeatability png output](https://github.com/beckdac/qtdraw/blob/main/main/mesh/qtdraw_mesh_diff.png?raw=true)
 
 Workflow
 ```
