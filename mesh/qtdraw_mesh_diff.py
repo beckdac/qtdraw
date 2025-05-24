@@ -65,9 +65,9 @@ def qtdraw_mesh_plot(output_filename: str, input_a_filename: str, input_b_filena
     ax.invert_xaxis()
     fig.colorbar(surf, shrink=0.3, aspect=5, pad=0.18)
 
-    plt.show()
     print(f"saving to '{output_filename}'")
     plt.savefig(output_filename)
+    plt.show()
 
 if __name__ == '__main__':
     qtdraw_mesh_plot()
