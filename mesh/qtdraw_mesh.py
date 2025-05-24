@@ -36,7 +36,7 @@ def receiver(ws: websocket.WebSocket, q: queue.Queue, qdone: queue.Queue):
                 return
 
 def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
-        data: queue.Queue, log: typing.TextIO, \
+        data: queue.Queue, log: typing.TextIO, gcode: typing.TextIO, \
         expect: str="ok") -> str:
     """This is the main send and get result function that compares against
     an expected 'ok' style result. Any lines not matching the expected 
@@ -47,6 +47,8 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
     file passed in.
     """
     ws.send(send);
+    gcode.write(send+'\n')
+    gcode.flush()
     while True:
         resp = q.get()
         if resp.startswith(expect):
@@ -59,7 +61,7 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
     return resp
 
 @click.command()
-@click.option('--lim', nargs=2, type=int, default=(400, 400), \
+@click.option('--lim', nargs=2, type=int, default=(200, 240), \
         help='Size limit of the work area in mm')
 @click.option('--div', nargs=2, type=int, default=(6, 6), \
         help='Samples per axis')
@@ -77,11 +79,12 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
         help='Output websocket to use for gcode input and output')
 @click.option('--output_filename', type=str, default='qtdraw_mesh.tsv')
 @click.option('--log_filename', type=str, default='qtdraw_mesh.log')
+@click.option('--gcode_filename', type=str, default='qtdraw_mesh.gcode')
 @click.option('--probe_x_offset', type=int, default=26)
 @click.option('--probe_y_offset', type=int, default=26)
 def qt_mesh(lim, div, \
         feed, seek, probe_depth, travel_height, safe_height, \
-        output_filename, log_filename, uri, \
+        output_filename, log_filename, gcode_filename, uri, \
         probe_x_offset, probe_y_offset):
     """Generate G-code for fluidnc and parse the output to build
     a height map of the bed by communicating over a websocket and
@@ -101,18 +104,19 @@ def qt_mesh(lim, div, \
     print(f"generating {div[0] * div[1]} points on a grid from ({xv[0]},{yv[0]}) to ({xv[-1]},{yv[-1]})")
 
     with alive_bar(len(xv) * len(yv)) as bar, \
-            open(log_filename, 'w') as log:
+            open(log_filename, 'w') as log, \
+            open(gcode_filename, 'w') as gcode:
         # preamble
-        ws_send_and_get(ws, q, f"G90 G21 G17\n", data, log)
+        ws_send_and_get(ws, q, f"G90 G21 G17\n", data, log, gcode)
         fine_seek = seek / 2
         # travel to safe height
-        ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data, log)
+        ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data, log, gcode)
 
 
         def ws_send_xy(x, y):
-            ws_send_and_get(ws, q, f"G1 X{x} Y{y} F{feed}\n", data, log)
-            ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{fine_seek}\n", data, log)
-            ws_send_and_get(ws, q, f"G0 Z2 F{seek}\n", data, log)
+            ws_send_and_get(ws, q, f"G1 X{x} Y{y} F{feed}\n", data, log, gcode)
+            ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{fine_seek}\n", data, log, gcode)
+            ws_send_and_get(ws, q, f"G0 Z2 F{seek}\n", data, log, gcode)
             bar()
 
         # traverse the matrix but zig zag
@@ -124,7 +128,7 @@ def qt_mesh(lim, div, \
                 for y in reversed(yv):
                     ws_send_xy(x, y)
 
-        ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data, log)
+        ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data, log, gcode)
         
 
     # signal to the thread to quit, it will see this at the 
