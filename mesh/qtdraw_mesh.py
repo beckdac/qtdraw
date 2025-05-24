@@ -25,6 +25,8 @@ def receiver(ws: websocket.WebSocket, q: queue.Queue, qdone: queue.Queue):
                   line.startswith("ACTIVE_ID:") or \
                   line.startswith("<Run|MPos") or \
                   line.startswith("<Idle|MPos"):
+                if not qdone.empty():
+                    return
                 continue
             else:
                 #print(line)
