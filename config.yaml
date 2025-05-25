@@ -71,7 +71,7 @@ axes:
     soft_limits: true
     homing:
       cycle: 1
-      mpos_mm: 25.4
+      mpos_mm: 25.1
       #allow_single_axis: true
       positive_direction: true
       feed_mm_per_min: 250.000
