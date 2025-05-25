@@ -16,12 +16,12 @@ Comparing the repeatabilty of the bed mesh probe by comparing identical subseque
 *Workflow*
 ```
 # generate mesh with qtdraw at default uri
-./qtdraw_mesh.py --lim 200 200 --div 10 10 --feed 1000
+./qtdraw_mesh.py
 # visualize mesh
 ./qtdraw_mesh_plot.py
 # perhaps compare with previous mesh
 ./qtdraw_mesh_diff.py
 ./qtdraw_mesh_plot.py --input_filename qtdraw_mesh.previous.tsv
 # remap an input gcode file
-./qtdraw_remap_gcode.py --input_filename input.gcode --output_filename output.gcode
+./qtdraw_remap_gcode.py --input_gcode_filename ../civicsi.gcode --output_gcode_filename civicsi.qtdraw_remapped.gcode --machine_x_offset -29 --machine_y_offset -29
 ```
