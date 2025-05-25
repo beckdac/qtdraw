@@ -18,7 +18,8 @@ def mesh_read(input_filename: str) -> pd.DataFrame:
 @click.command()
 @click.option('--output_filename', type=str, default='qtdraw_mesh.png')
 @click.option('--input_filename', type=str, default='qtdraw_mesh.tsv')
-def qtdraw_mesh_plot(output_filename: str, input_filename: str):
+@click.option('--input_pts_filename', type=str, default=None)
+def qtdraw_mesh_plot(output_filename: str, input_filename: str, input_pts_filename: str):
     mesh = mesh_read(input_filename)
     mesh = mesh.sort_values(by=['x', 'y'])
     print(mesh)
@@ -33,8 +34,13 @@ def qtdraw_mesh_plot(output_filename: str, input_filename: str):
     fig = plt.figure(figsize=plt.figaspect(0.5))
 
     ax = fig.add_subplot(1, 2, 1, projection='3d')
-    surf = ax.plot_surface(x, y, z, \
+    surf = ax.plot_wireframe(x, y, z, \
         cmap=cm.jet, linewidth=1, rstride=1, cstride=1)
+    if input_pts_filename is not None:
+        pts = mesh_read(input_pts_filename)
+        pts = pts.sort_values(by=['x', 'y'])
+        ax.scatter(pts['x'], pts['y'], pts['z'], color='black', s=1)
+        print(pts)
     ax.set_zlim(z.min()-2, z.max()+2)
     ax.zaxis.set_major_locator(LinearLocator(11))
     ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
@@ -43,8 +49,10 @@ def qtdraw_mesh_plot(output_filename: str, input_filename: str):
     fig.colorbar(surf, shrink=0.3, aspect=5, pad=0.18)
 
     ax = fig.add_subplot(1, 2, 2, projection='3d')
-    surf = ax.plot_surface(x, y, z, \
+    surf = ax.plot_wireframe(x, y, z, \
         cmap=cm.jet, linewidth=1, rstride=1, cstride=1)
+    if input_pts_filename is not None:
+        ax.scatter(pts['x'], pts['y'], pts['z'], color='black', s=1)
     ax.zaxis.set_major_locator(LinearLocator(11))
     ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
     plt.xlabel("X")
