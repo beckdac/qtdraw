@@ -22,9 +22,9 @@ def mesh_read(input_filename: str) -> pd.DataFrame:
 def qtdraw_mesh_diff(output_filename: str, input_a_filename: str, input_b_filename: str):
     """Read two mesh files and output a new mesh file with the difference of A - B."""
     mesh_A = mesh_read(input_a_filename)
-    mesh_A = mesh_A.sort_values(by=['y', 'x'])
+    mesh_A = mesh_A.sort_values(by=['x', 'y'])
     mesh_B = mesh_read(input_b_filename)
-    mesh_B = mesh_B.sort_values(by=['y', 'x'])
+    mesh_B = mesh_B.sort_values(by=['x', 'y'])
     mesh = mesh_A.sub(mesh_B)
     if max(mesh['x'])-min(mesh['x']) > .001:
         raise ValueError("too much misalignment between x coordinates in meshes")
@@ -33,7 +33,7 @@ def qtdraw_mesh_diff(output_filename: str, input_a_filename: str, input_b_filena
     # move over the actual x y coords
     mesh['x'] = mesh_A['x']
     mesh['y'] = mesh_A['y']
-    print(mesh)
+    print(f"range of z difference is {(max(mesh['z'])-min(mesh['z'])):0.4f} mm")
 
     xv = mesh['x'].unique()
     yv = mesh['y'].unique()
