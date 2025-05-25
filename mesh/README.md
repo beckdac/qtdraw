@@ -27,7 +27,7 @@ Comparing the repeatabilty of the bed mesh probe by comparing identical subseque
 ./qtdraw_mesh_diff.py
 ./qtdraw_mesh_plot.py --input_filename qtdraw_mesh.previous.tsv
 # remap an input gcode file
-./qtdraw_remap_gcode.py --input_gcode_filename ../civicsi.gcode --output_gcode_filename civicsi.qtdraw_remapped.gcode --machine_x_offset -22 --machine_y_offset -27
+./qtdraw_remap_gcode.py --input_gcode_filename ../civicsi.gcode --output_gcode_filename civicsi.qtdraw_remapped.gcode 
 curl -F upload=@civicsi.qtdraw_remapped.gcode http://qtdraw.local/upload
 # center pen on x 22 and y 27 and lower it to touch the paper; zero z axis, run the remapped gcode
 ```
