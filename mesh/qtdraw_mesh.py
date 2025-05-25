@@ -161,6 +161,8 @@ def qt_mesh(lim, div, \
 
     df = pd.DataFrame(mesh_data, columns=("x", "y", "z"), dtype=float)
     print(f"writing mesh x,y,z data to '{output_filename}")
+    df["x"] = df["x"] - probe_x_offset
+    df["y"] = df["y"] - probe_y_offset
     df.to_csv(output_filename, sep='\t', header=True, index=False)
 
     # do this absolutely last because the qdone put won't trigger a
