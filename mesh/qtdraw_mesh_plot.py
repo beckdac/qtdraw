@@ -20,7 +20,7 @@ def mesh_read(input_filename: str) -> pd.DataFrame:
 @click.option('--input_filename', type=str, default='qtdraw_mesh.tsv')
 def qtdraw_mesh_plot(output_filename: str, input_filename: str):
     mesh = mesh_read(input_filename)
-    mesh = mesh.sort_values(by=['y', 'x'])
+    mesh = mesh.sort_values(by=['x', 'y'])
     print(mesh)
 
     xv = mesh['x'].unique()
@@ -40,7 +40,6 @@ def qtdraw_mesh_plot(output_filename: str, input_filename: str):
     ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
     plt.xlabel("X")
     plt.ylabel("Y")
-    ax.invert_xaxis()
     fig.colorbar(surf, shrink=0.3, aspect=5, pad=0.18)
 
     ax = fig.add_subplot(1, 2, 2, projection='3d')
@@ -50,7 +49,6 @@ def qtdraw_mesh_plot(output_filename: str, input_filename: str):
     ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
     plt.xlabel("X")
     plt.ylabel("Y")
-    ax.invert_xaxis()
     fig.colorbar(surf, shrink=0.3, aspect=5, pad=0.18)
 
     print(f"saving to '{output_filename}'")
