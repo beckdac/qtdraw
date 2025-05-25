@@ -24,6 +24,8 @@ def receiver(ws: websocket.WebSocket, q: queue.Queue, qdone: queue.Queue):
             if line.startswith("PING:") or \
                   line.startswith("CURRENT_ID:") or \
                   line.startswith("ACTIVE_ID:") or \
+                  line.startswith("<Run|WPos") or \
+                  line.startswith("<Idle|WPos") or \
                   line.startswith("<Run|MPos") or \
                   line.startswith("<Idle|MPos"):
                 if not qdone.empty():
@@ -61,9 +63,9 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
     return resp
 
 @click.command()
-@click.option('--lim', nargs=2, type=int, default=(200, 240), \
+@click.option('--lim', nargs=2, type=int, default=(160, 160), \
         help='Size limit of the work area in mm')
-@click.option('--div', nargs=2, type=int, default=(10, 10), \
+@click.option('--div', nargs=2, type=int, default=(5, 5), \
         help='Samples per axis')
 @click.option('--feed', type=int, default=1000, \
         help='Feed rate in x and y')
@@ -80,8 +82,8 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
 @click.option('--output_filename', type=str, default='qtdraw_mesh.tsv')
 @click.option('--log_filename', type=str, default='qtdraw_mesh.log')
 @click.option('--gcode_filename', type=str, default='qtdraw_mesh.gcode')
-@click.option('--probe_x_offset', type=int, default=26)
-@click.option('--probe_y_offset', type=int, default=26)
+@click.option('--probe_x_offset', type=int, default=-26)
+@click.option('--probe_y_offset', type=int, default=-26)
 def qt_mesh(lim, div, \
         feed, seek, probe_depth, travel_height, safe_height, \
         output_filename, log_filename, gcode_filename, uri, \
@@ -107,6 +109,9 @@ def qt_mesh(lim, div, \
             open(log_filename, 'w') as log, \
             open(gcode_filename, 'w') as gcode:
         # preamble
+        # WPos $10=1
+        # MPos $10=0
+        #ws_send_and_get(ws, q, f"$10=0\n", data, log, gcode)
         ws_send_and_get(ws, q, f"G90 G21 G17\n", data, log, gcode)
         fine_seek = seek / 2
         # travel to safe height
@@ -114,7 +119,7 @@ def qt_mesh(lim, div, \
 
 
         def ws_send_xy(x, y):
-            ws_send_and_get(ws, q, f"G1 X{x:0.4f} Y{y:0.4f} F{feed}\n", data, log, gcode)
+            ws_send_and_get(ws, q, f"G1 X{x+probe_x_offset:0.4f} Y{y+probe_y_offset:0.4f} F{feed}\n", data, log, gcode)
             ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{fine_seek}\n", data, log, gcode)
             ws_send_and_get(ws, q, f"G0 Z2 F{seek}\n", data, log, gcode)
             bar()
@@ -155,9 +160,7 @@ def qt_mesh(lim, div, \
         mesh_data.append(xyz)
 
     df = pd.DataFrame(mesh_data, columns=("x", "y", "z"), dtype=float)
-    print(f"writing mesh x,y,z data to '{output_filename} after correcting for probe offset ({probe_x_offset}, {probe_y_offset})")
-    df["x"] = df["x"] + probe_x_offset
-    df["y"] = df["y"] + probe_y_offset
+    print(f"writing mesh x,y,z data to '{output_filename}")
     df.to_csv(output_filename, sep='\t', header=True, index=False)
 
     # do this absolutely last because the qdone put won't trigger a
