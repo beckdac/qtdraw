@@ -18,10 +18,10 @@ def mesh_read(input_filename: str) -> pd.DataFrame:
 @click.option('--output_gcode_filename', type=str, default='input.qtdraw_remapped.gcode')
 @click.option('--input_gcode_filename', type=str, default='input.gcode')
 @click.option('--input_mesh_filename', type=str, default='qtdraw_mesh.tsv')
-@click.option('--remap_x_offset', type=float, default=0, help='an offset applied to the x coords')
-@click.option('--remap_y_offset', type=float, default=0, help='an offset applied to the y coords')
-@click.option('--machine_x_offset', type=float, default=-29, help='an offset applied to the mesh x coords')
-@click.option('--machine_y_offset', type=float, default=-29, help='an offset applied to the mesh y coords')
+@click.option('--remap_x_offset', type=float, default=30, help='an offset applied to the x coords')
+@click.option('--remap_y_offset', type=float, default=30, help='an offset applied to the y coords')
+@click.option('--machine_x_offset', type=float, default=0, help='an offset applied to the mesh x coords')
+@click.option('--machine_y_offset', type=float, default=0, help='an offset applied to the mesh y coords')
 def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
         input_mesh_filename: str, \
         remap_x_offset: float, remap_y_offset: float, \
@@ -40,6 +40,7 @@ def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
     x = mesh['x'].to_numpy().reshape(shape)
     y = mesh['y'].to_numpy().reshape(shape)
     z = mesh['z'].to_numpy().reshape(shape)
+    z = z - z[0][0];
     #print(x)
     #print(y)
     #print(z)
@@ -58,11 +59,11 @@ def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
     for line in gcode.lines:
         X = line.get_param('X')
         if X is not None:
-            line.update_param('X', X+remap_x_offset)
+            line.update_param('X', round(X+remap_x_offset, 3))
             last_X = X+remap_x_offset
         Y = line.get_param('Y')
         if Y is not None:
-            line.update_param('Y', Y+remap_y_offset)
+            line.update_param('Y', round(Y+remap_y_offset, 3))
             last_Y = Y+remap_y_offset
         Z = line.get_param('Z')
         if Z is not None:
