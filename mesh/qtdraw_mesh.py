@@ -20,6 +20,7 @@ def receiver(ws: websocket.WebSocket, q: queue.Queue, qdone: queue.Queue):
             if not isinstance(line, str):
                 line = str(line, 'utf-8')
             if line.startswith("<Alarm"):
+                print(line)
                 raise Exception("Alarm! received from host.")
             if line.startswith("PING:") or \
                   line.startswith("CURRENT_ID:") or \
@@ -49,7 +50,7 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
     file passed in.
     """
     ws.send(send);
-    gcode.write(send+'\n')
+    gcode.write(send)
     gcode.flush()
     while True:
         resp = q.get()
@@ -58,20 +59,20 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
             break
         #print(f"unexpected response to {send} : {resp}")
         data.put(resp)
-        log.write(resp + '\n')
+        log.write(resp)
         log.flush() # force write for logging purposes
     return resp
 
 @click.command()
-@click.option('--lim', nargs=2, type=int, default=(160, 160), \
+@click.option('--lim', nargs=2, type=int, default=(195, 235), \
         help='Size limit of the work area in mm')
-@click.option('--div', nargs=2, type=int, default=(5, 5), \
+@click.option('--div', nargs=2, type=int, default=(10, 11), \
         help='Samples per axis')
 @click.option('--feed', type=int, default=1000, \
         help='Feed rate in x and y')
 @click.option('--seek', type=int, default=100, \
         help='Seek rate in z')
-@click.option('--probe_depth', type=int, default=-1, \
+@click.option('--probe_depth', type=int, default=-2, \
         help='Max probe depth from 0')
 @click.option('--travel_height', type=int, default=2, \
         help='Travel height for Z from sample to sample')
@@ -82,8 +83,8 @@ def ws_send_and_get(ws: websocket.WebSocket, q: queue.Queue, send: str, \
 @click.option('--output_filename', type=str, default='qtdraw_mesh.tsv')
 @click.option('--log_filename', type=str, default='qtdraw_mesh.log')
 @click.option('--gcode_filename', type=str, default='qtdraw_mesh.gcode')
-@click.option('--probe_x_offset', type=int, default=-26)
-@click.option('--probe_y_offset', type=int, default=-26)
+@click.option('--probe_x_offset', type=int, default=26)
+@click.option('--probe_y_offset', type=int, default=29)
 def qt_mesh(lim, div, \
         feed, seek, probe_depth, travel_height, safe_height, \
         output_filename, log_filename, gcode_filename, uri, \
@@ -109,17 +110,15 @@ def qt_mesh(lim, div, \
             open(log_filename, 'w') as log, \
             open(gcode_filename, 'w') as gcode:
         # preamble
-        # WPos $10=1
-        # MPos $10=0
-        #ws_send_and_get(ws, q, f"$10=0\n", data, log, gcode)
-        ws_send_and_get(ws, q, f"G90 G21 G17\n", data, log, gcode)
+        # we do this in machine coordinates
+        ws_send_and_get(ws, q, f"G53 G90 G21 G17\n", data, log, gcode)
         fine_seek = seek / 2
         # travel to safe height
         ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data, log, gcode)
 
 
         def ws_send_xy(x, y):
-            ws_send_and_get(ws, q, f"G1 X{x+probe_x_offset:0.4f} Y{y+probe_y_offset:0.4f} F{feed}\n", data, log, gcode)
+            ws_send_and_get(ws, q, f"G1 X{x:0.4f} Y{y:0.4f} F{feed}\n", data, log, gcode)
             ws_send_and_get(ws, q, f"G38.2 Z{probe_depth} F{fine_seek}\n", data, log, gcode)
             ws_send_and_get(ws, q, f"G0 Z2 F{seek}\n", data, log, gcode)
             bar()
@@ -134,6 +133,7 @@ def qt_mesh(lim, div, \
                     ws_send_xy(x, y)
 
         ws_send_and_get(ws, q, f"G0 Z{safe_height} F{seek}\n", data, log, gcode)
+        ws_send_and_get(ws, q, f"G54\n", data, log, gcode)
         
 
     # signal to the thread to quit, it will see this at the 
@@ -161,8 +161,8 @@ def qt_mesh(lim, div, \
 
     df = pd.DataFrame(mesh_data, columns=("x", "y", "z"), dtype=float)
     print(f"writing mesh x,y,z data to '{output_filename}")
-    df["x"] = df["x"] - probe_x_offset
-    df["y"] = df["y"] - probe_y_offset
+    df["x"] = df["x"] + probe_x_offset
+    df["y"] = df["y"] + probe_y_offset
     df.to_csv(output_filename, sep='\t', header=True, index=False)
 
     # do this absolutely last because the qdone put won't trigger a
