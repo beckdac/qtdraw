@@ -18,14 +18,19 @@ def mesh_read(input_filename: str) -> pd.DataFrame:
 @click.option('--output_gcode_filename', type=str, default='input.qtdraw_remapped.gcode')
 @click.option('--input_gcode_filename', type=str, default='input.gcode')
 @click.option('--input_mesh_filename', type=str, default='qtdraw_mesh.tsv')
-@click.option('--remap_x_offset', type=float, default=0)
-@click.option('--remap_y_offset', type=float, default=0)
+@click.option('--remap_x_offset', type=float, default=0, help='an offset applied to the x coords')
+@click.option('--remap_y_offset', type=float, default=0, help='an offset applied to the y coords')
+@click.option('--machine_x_offset', type=float, default=-29, help='an offset applied to the mesh x coords')
+@click.option('--machine_y_offset', type=float, default=-29, help='an offset applied to the mesh y coords')
 def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
         input_mesh_filename: str, \
-        remap_x_offset: float, remap_y_offset: float):
+        remap_x_offset: float, remap_y_offset: float, \
+        machine_x_offset: float, machine_y_offset: float):
     """Read two mesh files and output a new mesh file with the difference of A - B."""
     mesh = mesh_read(input_mesh_filename)
-    mesh = mesh.sort_values(by=['x', 'y'])
+    mesh = mesh.sort_values(by=['y', 'x'])
+    mesh['x'] = mesh['x'] + machine_x_offset
+    mesh['y'] = mesh['y'] + machine_y_offset
     print(f"read {mesh.size} elements from mesh in {mesh.shape} from '{input_mesh_filename}")
 
     # process the mesh into a meshgrid for sampling for gcode remapping
@@ -35,9 +40,6 @@ def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
     x = mesh['x'].to_numpy().reshape(shape)
     y = mesh['y'].to_numpy().reshape(shape)
     z = mesh['z'].to_numpy().reshape(shape)
-    print(z)
-    #z = mesh['z'].to_numpy()
-    #print(z)
     #print(x)
     #print(y)
     #print(z)
@@ -48,6 +50,8 @@ def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
 
     gcode = gcodeparser.GcodeParser(gcode_in, include_comments=True)
     print(f"read {len(gcode.lines)} lines of gcode from '{input_gcode_filename}'")
+    #print(xv)
+    #print(yv)
     remap_func = scipy.interpolate.RegularGridInterpolator((xv, yv), z)
     last_X = None
     last_Y = None
@@ -65,7 +69,7 @@ def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
             if last_X is not None and last_Y is not None:
                 #print(f"{([last_X], [last_Y])}")
                 Z_adjust = remap_func(([last_X, last_Y]))
-                line.update_param('Z', Z+float(Z_adjust[0]))
+                line.update_param('Z', round(Z+float(Z_adjust[0]),3))
     
     print(f"saving modified lines to '{output_gcode_filename}")
     with open(output_gcode_filename, 'w') as output:
