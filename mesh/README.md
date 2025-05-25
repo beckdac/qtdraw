@@ -15,8 +15,12 @@ Comparing the repeatabilty of the bed mesh probe by comparing identical subseque
 
 *Workflow*
 ```
-# generate mesh with qtdraw at default uri
-./qtdraw_mesh.py
+# generate gcode to sample a mesh 
+./qtdraw_mesh.py --work-mode gcode --output_gcode_filename qtdraw_mesh.gcode
+# run the gcode on the qtdraw using the fluidnc and grab the log
+# telnet to the device is a an easy way to get the log
+# parse the mesh into a tsv from the fuildnc log, specifically PRB lines
+./qtdraw_mesh.py --work-mode parse --input_log_filename qtdraw_mesh.log --output_mesh_filename qtdraw_mesh.tsv
 # visualize mesh
 ./qtdraw_mesh_plot.py
 # perhaps compare with previous mesh
