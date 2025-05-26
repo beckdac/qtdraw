@@ -31,3 +31,10 @@ Comparing the repeatabilty of the bed mesh probe by comparing identical subseque
 curl -F upload=@civicsi.qtdraw_remapped.gcode http://qtdraw.local/upload
 # center pen on x 22 and y 27 and lower it to touch the paper; zero z axis, run the remapped gcode
 ```
+
+### to create the environment:
+```
+conda create -n qtdraw_mesh python numpy pandas matplotlib click scipy
+conda activate qtdraw_mesh
+pip install -e "git+https://github.com/AndyEveritt/GcodeParser.git@master#egg=gcodeparser"
+```
