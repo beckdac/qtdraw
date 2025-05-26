@@ -1,6 +1,7 @@
 *.gcode
 *.tsv
 *.out.svg
+*.FCBak
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
