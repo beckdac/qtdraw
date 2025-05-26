@@ -51,7 +51,7 @@ class LogoSketch(vsketch.SketchClass):
                 elif on:
                         on = False
                         end = idx
-                        start_stops.append((start, end))
+                        start_stops.append((float(start), float(end)))
             return start_stops
         arc_breaks_prlns = vsk.noise(np.linspace(0, 1., int(self.arc_span)))
         arc_breaks = sample_start_stops(arc_breaks_prlns)
@@ -73,11 +73,13 @@ class LogoSketch(vsketch.SketchClass):
             stop = False
             for brks in range(len(arc_breaks)):
                 arc_start, arc_end = arc_breaks[brks]
-                print(f"arc = {arc_start}, {arc_end}")
+                print(f"arc {idx} = {arc_start}, {arc_end}")
+                if -arc_rand_end > -arc_start:
+                    break
                 if -arc_rand_end > -arc_end:
                     arc_end = arc_rand_end
                     stop = True
-                    print(f"arc end cond = {arc_start}, {arc_end}")
+                    print(f"arc {idx} end cond = {arc_start}, {arc_end}")
 
                 vsk.arc(ctr_x, ctr_y, \
                     arc_rand_radius, arc_rand_radius, \
