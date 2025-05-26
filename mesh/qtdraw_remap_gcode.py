@@ -29,7 +29,7 @@ def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
         input_mesh_filename: str, \
         remap_x_offset: float, remap_y_offset: float, \
         machine_x_offset: float, machine_y_offset: float, \
-        swap_mesh_axis: bool=True, \
+        swap_mesh_axis: bool, \
         remap_out_filename: str, remap_reference_xi_yj: (int, int)):
     """Read two mesh files and output a new mesh file with the difference of A - B."""
     mesh = mesh_read(input_mesh_filename)
@@ -57,8 +57,8 @@ def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
     remap_pts = []
     gcode = gcodeparser.GcodeParser(gcode_in, include_comments=True)
     print(f"read {len(gcode.lines)} lines of gcode from '{input_gcode_filename}'")
-    print(xv)
-    print(yv)
+    #print(xv)
+    #print(yv)
     remap_func = scipy.interpolate.RegularGridInterpolator((xv, yv), z)
     last_X = None
     last_Y = None
@@ -79,8 +79,11 @@ def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
                 # not a type y and x are reversed below
                 #Z_adjust = remap_func(([last_Y, last_X]))[0]
                 #print(f"Zadjust: {Z_adjust}")
-                remap_pts.append([last_X, last_Y, round(Z_adjust, 4)])
-                line.update_param('Z', round(Z+float(Z_adjust),4))
+                # add the current Z so we can do the travel heights correctly
+                # could also skip g0? 
+                newZ = float(Z) + int(Z_adjust * 100000)/100000.
+                remap_pts.append([last_X, last_Y, newZ])
+                line.update_param('Z', newZ)
     
     print(f"saving modified lines to '{output_gcode_filename}")
     with open(output_gcode_filename, 'w') as output:
@@ -90,7 +93,9 @@ def qtdraw_remap_gcode(output_gcode_filename: str, input_gcode_filename: str, \
     print(f"saving points of modified gcode to '{remap_out_filename}'")
     for xi in xv:
         for yj in yv:
-            remap_pts.append([xi, yj, round(remap_func(([xi, yj]))[0], 4)])
+            zpt = int(remap_func(([xi, yj]))[0] * 100000)/100000.
+            #print(zpt)
+            remap_pts.append([xi, yj, zpt])
     remap_df = pd.DataFrame(remap_pts, columns=['x', 'y', 'z'])
     remap_df.to_csv(remap_out_filename, sep='\t', header=True, index=False)
 
