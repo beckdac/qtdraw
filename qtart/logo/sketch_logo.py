@@ -38,13 +38,13 @@ class LogoSketch(vsketch.SketchClass):
         arc_sep_prlns = vsk.noise(np.linspace(0, .1, self.arc_sub_arcs))
         arc_brnch_prlns = noise_int(self.arc_sub_arcs, self.arc_branches)
         #print(arc_brnch_prlns)
-        def sample_start_stops(prlns: np.ndarray):
+        def sample_start_stops(prlns: np.ndarray, scale: np.ndarray):
             """returns a list of tuples with on and off indexes always incrementing"""
             #print(prlns)
             on = False
             start_stops = []
             for idx, sample in enumerate(prlns):
-                if vsk.randomGaussian() <= sample:
+                if vsk.random(0, sample) <= sample * scale[idx]:
                     if not on:
                         on = True
                         start = idx
@@ -54,7 +54,8 @@ class LogoSketch(vsketch.SketchClass):
                         start_stops.append((float(start), float(end)))
             return start_stops
         arc_breaks_prlns = vsk.noise(np.linspace(0, 1., int(self.arc_span)))
-        arc_breaks = sample_start_stops(arc_breaks_prlns)
+        arc_breaks = sample_start_stops(arc_breaks_prlns, arc_breaks_prlns)
+        print(arc_breaks)
         # draw
         for idx, a in enumerate(range(self.arc_sub_arcs)):
             arc_frac = (idx + 0.5)/len(range(self.arc_sub_arcs))
@@ -73,13 +74,13 @@ class LogoSketch(vsketch.SketchClass):
             stop = False
             for brks in range(len(arc_breaks)):
                 arc_start, arc_end = arc_breaks[brks]
-                print(f"arc {idx} = {arc_start}, {arc_end}")
+                #print(f"arc {idx} = {arc_start}, {arc_end}")
                 if -arc_rand_end > -arc_start:
                     break
                 if -arc_rand_end > -arc_end:
                     arc_end = arc_rand_end
                     stop = True
-                    print(f"arc {idx} end cond = {arc_start}, {arc_end}")
+                    #print(f"arc {idx} end cond = {arc_start}, {arc_end}")
 
                 vsk.arc(ctr_x, ctr_y, \
                     arc_rand_radius, arc_rand_radius, \
