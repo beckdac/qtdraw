@@ -1,6 +1,6 @@
-gcode: building.gcode landuse.gcode natural.gcode railway.gcode way.gcode
+gcode: building.gcode landuse.gcode natural.gcode railway.gcode way.gcode 
 
-%.gcode: %.svg
+%.gcode: %.svg lineart.bash
 	./lineart.bash $<
 
 all: $(gcode)
