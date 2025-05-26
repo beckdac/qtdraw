@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dim=16cm
+dim=15cm
 
 echo line plotting
 vpype read civicsi.svg \
