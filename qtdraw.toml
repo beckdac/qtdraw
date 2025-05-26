@@ -5,7 +5,7 @@ layer_start = "(Start Layer)\n"
 line_start = "(Start Block)\n"
 segment_first = """G00 Z5
 G00 X{x:.4f} Y{y:.4f}
-G01 Z0 F1000
+G01 Z0 F600
 """
 segment = """G01 X{x:.4f} Y{y:.4f} Z0\n"""
 line_end = """G00 Z5\n"""
