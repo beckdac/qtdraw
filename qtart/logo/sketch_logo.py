@@ -98,6 +98,7 @@ class LogoSketch(vsketch.SketchClass):
         vsk.vpype("linemerge linesimplify reloop linesort")
 
 
+
 if __name__ == "__main__":
+    LogoSketch.save("/tmp/logo.svg")
     LogoSketch.display()
-    #LogoSketch.save("logo.svg")
