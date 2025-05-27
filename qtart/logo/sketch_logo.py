@@ -105,10 +105,10 @@ class LogoSketch(vsketch.SketchClass):
         cplns = noise_int(sys.getrecursionlimit(), self.colors)
         # length
         vsk.noiseSeed(self.tree_noise_seed+1)
-        lplns = vsk.noise(np.linspace(0, 2., self.arc_sub_arcs)) * 2
+        lplns = vsk.noise(np.linspace(0, 2., self.arc_sub_arcs)) * 1
         # min length
         vsk.noiseSeed(self.tree_noise_seed+2)
-        mlplns = vsk.noise(np.linspace(0, 1., self.arc_sub_arcs))
+        mlplns = vsk.noise(np.linspace(0, 1., self.arc_sub_arcs)) / 2
         # decreases
         vsk.noiseSeed(self.tree_noise_seed+3)
         dplns = vsk.noise(np.linspace(0, 1., self.arc_sub_arcs)) + .3

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+for file in ../qtart/logo/output/*layer_?.gcode
+do
+    outfile=`echo $file | sed "s/.gcode/.remapped.gcode/g"`
+    echo $file to $outfile
+    ./qtdraw_remap_gcode.py --input_gcode_filename $file --output_gcode_filename $outfile
+     curl -F upload=@$outfile http://qtdraw.local/upload
+done
