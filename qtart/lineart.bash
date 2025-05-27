@@ -18,14 +18,13 @@ outsvg=`echo $insvg | sed "s/.svg/.out.svg/g"`
 
 echo line plotting
 vpype read $insvg \
-    scaleto $dim $dim \
     splitall \
     linemerge --tolerance $tol \
     linesort \
     reloop \
     linesimplify \
     filter --min-length $minlen \
-    write --center --page-size ${dim}x$dim $outsvg
+    write --page-size ${dim}x$dim $outsvg
 
 echo splitting by layer
 vpype read $outsvg \
