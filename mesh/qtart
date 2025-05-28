@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for file in ../qtart/logo/output/*layer_?.gcode
+for file in ../qtart/logo/output/*.gcode
 do
     outfile=`echo $file | sed "s/.gcode/.remapped.gcode/g"`
     echo $file to $outfile

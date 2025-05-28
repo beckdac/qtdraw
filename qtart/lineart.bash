@@ -27,12 +27,13 @@ vpype read $insvg \
     write --page-size ${dim}x$dim $outsvg
 
 echo splitting by layer
-vpype read $outsvg \
-    forlayer write "${outpre}.layer_%_name or _lid%.svg" end
+#vpype read $outsvg \
+#    forlayer write "${outpre}.layer_%_name or _lid%.svg" end
 
 echo gcode rendering
 #for file in `ls ${outpre}.layer_*.svg`
-for file in ${outpre}.layer_*.svg
+#for file in ${outpre}.layer_*.svg
+for file in ${outpre}.svg
 do
     echo $file
     outgcode=`echo $file | sed "s/.svg/.gcode/g"`
