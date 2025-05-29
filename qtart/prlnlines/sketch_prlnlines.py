@@ -68,73 +68,15 @@ def xy_next(xy: (float, float), length: float, angle: float) -> (float, float):
     return (x_next, y_next)
 
 
-def search(xy: (float, float), parent_xy: (float, float), last_angle: float, depth: int, vsk: vsketch.Vsketch, self):
-    global lines
-    #print(f"search called with {xy}, {last_angle}, and {color}")
-    if (depth == sys.getrecursionlimit() - 100):
-    #if (depth == 100):
-        return 
-    noise = vsk.noise(x=xy[0], y=xy[1])
-    # interesting below how the noise is handles will determine left and right
-    tmp_angle = self.angle_range_min_degrees + ((self.angle_range_max_degrees - self.angle_range_min_degrees) * noise)
-    if vsk.randomGaussian() > 0.5:
-        tmp_angle *= -1
-    angle = last_angle + tmp_angle
-    distance = self.distance_range_min + (self.distance_range_max - self.distance_range_min) * noise
-    new_xy = xy_next(xy, distance, angle)
-    new_line = (xy, new_xy)
-    #print(f"A {depth} looking for lines intersecting: {new_line}", flush=True)
-    a_failed=False
-    if len(lines) > 4:
-        skip = 2 # last one
-    else:
-        skip = 1 # 0
-    for line in lines[:-skip]:
-        if line[0] == parent_xy or line[1] == parent_xy:
-            continue
-        if intersect(((new_line[0], new_line[1]), (line[0], line[1]))):
-            a_failed=True
-            break
-    vsk.strokeWeight(int(depth * self.strokeWeight_scale) + 1)
-    if not a_failed:
-        vsk.line(xy[0], xy[1], new_xy[0], new_xy[1])
-        lines.append((new_line))
-        search(new_xy, xy, angle, depth+1, vsk, self)
-        skip += 1
-    # negative angle
-    angle = last_angle - tmp_angle
-    distance = self.distance_range_min + (self.distance_range_max - self.distance_range_min) * noise
-    new_xy = xy_next(xy, distance, angle)
-    new_line = (xy, new_xy)
-    #print(f"B {depth} looking for lines intersecting: {new_line}", flush=True)
-    b_failed=False
-    for line in lines[:-skip]:
-        if line[0] == parent_xy or line[1] == parent_xy:
-            continue
-        if intersect(((new_line[0], new_line[1]), (line[0], line[1]))):
-            b_failed=True
-            break
-    if b_failed:
-        return
-    vsk.strokeWeight(int(depth * self.strokeWeight_scale) + 1)
-    vsk.line(xy[0], xy[1], new_xy[0], new_xy[1])
-    lines.append((new_line))
-    search(new_xy, xy, angle, depth+1, vsk, self)
-
-
-lines = []
-
 class LogoSketch(vsketch.SketchClass):
     # Sketch parameters:
     colors = vsketch.Param(value=8, min_value=1, max_value=64, step=1, decimals=0)
     size_mm = vsketch.Param(value=160, min_value=10, max_value=1000, step=1, decimals=0)
-    stroke_width = vsketch.Param(value=1, min_value=1, max_value=10, step=1, decimals=0)
-    angle_range_min_degrees = vsketch.Param(value=15, min_value=1, max_value=180, step=1, decimals=1)
-    angle_range_max_degrees = vsketch.Param(value=90, min_value=2, max_value=359, step=1, decimals=1)
+    noise_scale = vsketch.Param(value=1, min_value=0, max_value=10, step=.01, decimals=2)
     distance_range_min = vsketch.Param(value=1, min_value=1, max_value=100, step=.5, decimals=1)
     distance_range_max = vsketch.Param(value=3, min_value=2, max_value=100, step=.5, decimals=1)
-    searches = vsketch.Param(value=4096, min_value=1, max_value=10000, step=1, decimals=0)
-    strokeWeight_scale = vsketch.Param(value=.1, min_value=0, max_value=10, step=.01, decimals=2)
+    searches = vsketch.Param(value=1, min_value=1, max_value=10000, step=1, decimals=0)
+    freq = vsketch.Param(value=3, min_value=1, max_value=10, step=1, decimals=0)
 
     def draw(self, vsk: vsketch.Vsketch) -> None:
         # size
@@ -144,16 +86,14 @@ class LogoSketch(vsketch.SketchClass):
         vsk.noFill()
         vsk.penWidth("0.5mm")
 
-        if self.stroke_width != 1:
-            vsk.strokeWeight(self.stroke_width)
-
         x_ctr = self.size_mm/2.
         y_ctr = self.size_mm/2.
         x_min = 5.
         x_max = self.size_mm-x_min
         y_min = 5.
         y_max = self.size_mm-y_min
-        vsk.translate(x_ctr, y_ctr)
+        #vsk.translate(x_ctr, y_ctr)
+        noise_grid = vsk.noise(np.linspace(0, self.noise_scale, self.size_mm), np.linspace(0, self.noise_scale, self.size_mm))
 
 
         # arcs
@@ -166,17 +106,18 @@ class LogoSketch(vsketch.SketchClass):
         #print(intersect((((0, 0), (1, 0)), ((.5, -5), (.5,.5)))))
         #print(intersect((((0, 0), (0, 0.1)), ((.5, -5), (.5,.5)))))
 
-        global lines
-        lines = [((x_min,y_min), (x_min,y_max)),((x_min,y_max), (x_max,y_max)),((x_max,y_max), (x_max,y_min)),((x_max,y_min), (x_min,y_min))]
-        lines += lines; # this allows the 0:-2 below to work at the expense of four extra comparisons every line
-
-        xy = (x_ctr, y_ctr)
-        for srch in range(self.searches):
-            noise = vsk.noise(x=xy[0], y=xy[1])
-            angle = 360 * noise
-            search(xy, xy, angle, 0, vsk, self)
-            vsk.stroke((self.colors * noise) + 1)
-            xy = (vsk.random(x_min, x_max), vsk.random(y_min, y_max))
+        for x in np.arange(x_min + self.freq, x_max, self.freq):
+            for y in np.arange(y_min+self.freq, y_max, self.freq):
+                last_xy = (x - self.freq, y - self.freq)
+                xy = (x, y)
+                x_mid = last_xy[0] + (xy[0] - last_xy[0]) / 2
+                y_mid = last_xy[1] + (xy[1] - last_xy[1]) / 2
+                noise = noise_grid[int(x_mid)][int(y_mid)]
+                angle = noise * 360
+                distance = (noise * (self.distance_range_max - self.distance_range_min)) + self.distance_range_min
+                xy_n = xy_next(xy, distance, angle)
+                #vsk.stroke((noise * self.colors) + 1)
+                vsk.line(xy[0], xy[1], xy_n[0], xy_n[1])
 
 
     def finalize(self, vsk: vsketch.Vsketch) -> None:
