@@ -1,9 +1,9 @@
 #!/bin/bash
 
 dim=16cm
-tol=1mm
 tol=0.1mm
 tol=0.4mm
+tol=1mm
 minlen=0.5mm
 minlen=1mm
 
@@ -23,6 +23,7 @@ vpype read $insvg \
     linesort \
     reloop \
     linesimplify \
+    deduplicate -t $tol\
     filter --min-length $minlen \
     write --page-size ${dim}x$dim $outsvg
 
@@ -35,8 +36,8 @@ echo gcode rendering
 #for file in ${outpre}.layer_*.svg
 for file in ${outpre}.svg
 do
-    echo $file
     outgcode=`echo $file | sed "s/.svg/.gcode/g"`
+    echo $file $outgcode
     vpype --config ../qtdraw.toml \
         read $file \
         gwrite -p qtdraw $outgcode
