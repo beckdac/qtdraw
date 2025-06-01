@@ -3,11 +3,11 @@ unit = "mm"
 document_start = "G21\n"
 layer_start = "(Start Layer)\nG0 G53 Z24 F100\nG0 G53 X22 Y27 F100\nM0\n"
 line_start = "(Start Block)\n"
-segment_first = """G00 Z5
+segment_first = """G00 Z2
 G00 X{x:.4f} Y{y:.4f}
 G01 Z0 F600
 """
 segment = """G01 X{x:.4f} Y{y:.4f} Z0\n"""
 line_end = """G00 Z2\n"""
-document_end = """G00 X0.0000 Y0.0000"""
+document_end = """G01 Z5\nG00 X0.0000 Y0.0000"""
 invert_y = true
