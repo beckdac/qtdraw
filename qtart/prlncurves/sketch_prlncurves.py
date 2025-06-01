@@ -106,18 +106,24 @@ class LogoSketch(vsketch.SketchClass):
         #print(intersect((((0, 0), (1, 0)), ((.5, -5), (.5,.5)))))
         #print(intersect((((0, 0), (0, 0.1)), ((.5, -5), (.5,.5)))))
 
-        for x in np.arange(x_min + self.freq, x_max, self.freq):
-            for y in np.arange(y_min+self.freq, y_max, self.freq):
-                last_xy = (x - self.freq, y - self.freq)
-                xy = (x, y)
-                x_mid = last_xy[0] + (xy[0] - last_xy[0]) / 2
-                y_mid = last_xy[1] + (xy[1] - last_xy[1]) / 2
-                noise = noise_grid[int(x_mid)][int(y_mid)]
-                angle = noise * 360
-                distance = (noise * (self.distance_range_max - self.distance_range_min)) + self.distance_range_min
-                xy_n = xy_next(xy, distance, angle)
-                #vsk.stroke((noise * self.colors) + 1)
-                vsk.line(xy[0], xy[1], xy_n[0], xy_n[1])
+        def find_P4(P2, P3, beta):
+            x = P3[0] + (P3[0] - P2[0])/beta
+            y = P3[1] + (P3[1] - P2[1])/beta
+            return (x, y)
+
+        prev_ctrl = ((x_min, y_min), (x_min+.1,y_min),(x_min+.2,y_min), (x_min+self.freq, y_min))
+        for x in np.arange(x_min + self.freq, x_max - self.freq, self.freq):
+            for y in np.arange(y_min, y_max, self.freq):
+                P4 = find_P4(prev_ctrl[2], prev_ctrl[3], 1 + (noise_grid[int(x)][int(y)] - .5) * 10)
+                #distance = (noise_grid[int(x)][int(y)] - .5) * (self.distance_range_max - self.distance_range_min) * 2
+                distance = .1
+                vsk.bezier(x, y, \
+                        P4[0], P4[1], \
+                        x+self.freq/2, y+distance, \
+                        x + self.freq, y)
+                prev_ctrl = [(x, y), P4, (x+self.freq/2, y+distance), (x + self.freq, y)]
+                print(P4)
+            print("ydone")
 
 
     def finalize(self, vsk: vsketch.Vsketch) -> None:

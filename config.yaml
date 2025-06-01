@@ -87,6 +87,8 @@ axes:
       stepstick:
         step_pin: I2SO.3
         direction_pin: I2SO.4:low
+
+NoSpindle:
  
 i2so:
   bck_pin: gpio.16
