@@ -2,8 +2,9 @@
 
 dim=16cm
 tol=0.1mm
+tol=1.5mm
+tol=1.0mm
 tol=0.4mm
-tol=1mm
 minlen=0.5mm
 minlen=1mm
 
@@ -34,7 +35,7 @@ echo splitting by layer
 echo gcode rendering
 #for file in `ls ${outpre}.layer_*.svg`
 #for file in ${outpre}.layer_*.svg
-for file in ${outpre}.svg
+for file in ${outsvg}
 do
     outgcode=`echo $file | sed "s/.svg/.gcode/g"`
     echo $file $outgcode
