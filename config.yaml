@@ -3,7 +3,7 @@ name: qtdraw 5
 meta: villamany 30/Jan/2023
 
 kinematics:
-  Cartesian:
+  corexy:
 
 stepping:
   engine: I2S_STATIC
@@ -18,7 +18,7 @@ axes:
     steps_per_mm: 80
     max_rate_mm_per_min: 6000
     acceleration_mm_per_sec2: 500
-    max_travel_mm: 200
+    max_travel_mm: 550
     soft_limits: true
     homing:
       cycle: 2
@@ -35,14 +35,14 @@ axes:
       pulloff_mm: 5
       limit_all_pin: gpio.36:high
       stepstick:
-        step_pin: I2SO.1
-        direction_pin: I2SO.2:high
+        step_pin: I2SO.5
+        direction_pin: I2SO.6:high
 
   y:
     steps_per_mm: 80
     max_rate_mm_per_min: 6000
     acceleration_mm_per_sec2: 500
-    max_travel_mm: 240
+    max_travel_mm: 550
     soft_limits: true
     #pulloff_mm: 2.000
     homing:
@@ -60,14 +60,14 @@ axes:
       limit_all_pin: gpio.35:high
       pulloff_mm: 5
       stepstick:
-        step_pin: I2SO.5
-        direction_pin: I2SO.6:low
+        step_pin: I2SO.1
+        direction_pin: I2SO.2:low
  
   z:
     steps_per_mm: 1600
     max_rate_mm_per_min: 1000
     acceleration_mm_per_sec2: 120
-    max_travel_mm: 31
+    max_travel_mm: 41
     soft_limits: true
     homing:
       cycle: 1
